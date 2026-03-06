@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>Outlet Role · ReCircle</title>
+  <!-- Font Awesome 6 (free icons) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Dexie.js (IndexedDB wrapper) -->
+  <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: background-color 0.25s ease, color 0.2s ease, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    /* Light theme (default) – white bg, dark green text */
+    body {
+      --bg-primary: #ffffff;
+      --bg-surface: #f8faf8;
+      --text-primary: #0f5132;
+      --text-secondary: #2d6a4f;
+      --border-light: #d0e0d5;
+      --card-bg: #ffffff;
+      --shadow: 0 8px 20px rgba(15, 81, 50, 0.08);
+      --hover-glow: 0 4px 12px rgba(15, 81, 50, 0.25);
+      --nav-hover: #e7f3ec;
+      --accent-green: #0f5132;
+      --icon-filter: none;
+    }
+
+    body.dark {
+      --bg-primary: #123123;        /* dark green base */
+      --bg-surface: #1d2c26;         /* slightly lighter green for surfaces */
+      --text-primary: #ffffff;
+      --text-secondary: #e0f0e5;
+      --border-light: #132b1f;
+      --card-bg: #013616;             /* deep green card */
+      --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      --hover-glow: 0 4px 16px rgba(46, 46, 46, 0.2);
+      --nav-hover: #002412;
+      --accent-green: #ffffff;
+      --icon-filter: brightness(0) invert(1);
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* main dashboard wrapper */
+    .dashboard {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ---------- HEADER ---------- */
+    .header {
+      background-color: var(--bg-surface);
+      padding: 0.8rem 1.8rem;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+
+    .logo h2 {
+      font-weight: 600;
+      font-size: 1.6rem;
+      letter-spacing: -0.5px;
+      color: var(--accent-green);
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 1.2rem;
+      align-items: center;
+    }
+
+    /* toggle buttons */
+    .toggle-btn {
+      background: transparent;
+      border: 1px solid var(--border-light);
+      border-radius: 40px;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.25s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    .toggle-btn i {
+      font-size: 1.2rem;
+    }
+
+    .toggle-btn:hover {
+      box-shadow: var(--hover-glow);
+      border-color: var(--accent-green);
+      transform: scale(1.02);
+    }
+
+    /* ----- MAIN LAYOUT (sidebar + content) with RTL support ----- */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      flex-direction: row; /* default LTR */
+    }
+
+    /* RTL override: swap sidebar and main visually */
+    body[dir="rtl"] .main-layout {
+      flex-direction: row-reverse;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px;
+      background-color: var(--bg-surface);
+      border-right: 1px solid var(--border-light);
+      padding: 2rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+    }
+
+    body[dir="rtl"] .sidebar {
+      border-right: none;
+      border-left: 1px solid var(--border-light);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1.5rem;
+      border-radius: 40px;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      font-size: 1rem;
+    }
+
+    .nav-item i {
+      font-size: 1.3rem;
+      width: 28px;
+      color: var(--accent-green);
+    }
+
+    .nav-item:hover {
+      background-color: var(--nav-hover);
+      box-shadow: var(--hover-glow);
+      transform: translateX(4px);
+    }
+
+    .nav-item.active {
+      background-color: var(--accent-green);
+      color: var(--bg-primary);
+      box-shadow: 0 8px 16px rgba(15,81,50,0.3);
+    }
+    .nav-item.active i {
+      color: var(--bg-primary);
+    }
+
+    /* MAIN CONTENT PANEL */
+    .content-panel {
+      flex: 1;
+      padding: 1.8rem 2rem;
+      overflow-y: auto;
+      background-color: var(--bg-primary);
+      scroll-behavior: smooth;
+    }
+
+    /* sections - only active shown */
+    .section {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .section.active-section {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0.4; transform: translateY(6px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background-color: var(--card-bg);
+      border-radius: 28px;
+      padding: 1.6rem 1.4rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-light);
+      transition: transform 0.2s, box-shadow 0.3s;
+    }
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 28px rgba(15,81,50,0.15);
+    }
+    .stat-title {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+    }
+    .stat-value {
+      font-size: 2.4rem;
+      font-weight: 700;
+      margin: 0.4rem 0 0.2rem;
+    }
+    .stat-trend {
+      font-size: 0.9rem;
+      color: #2b8c5e;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    /* forms */
+    .form-panel {
+      background-color: var(--card-bg);
+      border-radius: 32px;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-light);
+      max-width: 700px;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    label {
+      font-weight: 500;
+      display: block;
+      margin-bottom: 0.4rem;
+      color: var(--text-secondary);
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.9rem 1.2rem;
+      border-radius: 40px;
+      border: 1px solid var(--border-light);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: 0.2s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(15,81,50,0.2);
+    }
+    .btn-primary {
+      background-color: var(--accent-green);
+      color: var(--bg-primary);
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: 0.25s;
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+      box-shadow: var(--hover-glow);
+      transform: scale(1.02);
+    }
+
+    /* records list */
+    .records-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .record-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 1rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-light);
+    }
+    .record-card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 18px;
+      margin-bottom: 0.8rem;
+      border: 2px solid var(--border-light);
+    }
+    .record-card p {
+      margin: 0.2rem 0;
+    }
+
+    /* responsive */
+    @media (max-width: 700px) {
+      .sidebar {
+        width: 80px;
+        padding: 1rem 0.2rem;
+      }
+      .nav-item span {
+        display: none;
+      }
+      .nav-item i {
+        font-size: 1.8rem;
+        margin: 0 auto;
+      }
+      .content-panel {
+        padding: 1rem;
+      }
+      .header {
+        padding: 0.6rem 1rem;
+      }
+    }
+    @media (max-width: 480px) {
+      .stat-value {
+        font-size: 1.8rem;
+      }
+      .form-panel {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- header with toggles -->
+    <header class="header">
+      <div class="logo">
+        <h2> Outlet · ReCircle</h2>
+      </div>
+      <div class="header-controls">
+        <!-- dark/light toggle -->
+        <button class="toggle-btn" id="themeToggle" title="Toggle dark mode">
+          <i id="themeIcon" class="fas fa-sun"></i>
+          <span>Light / Dark</span>
+        </button>
+        <!-- arabic/english toggle -->
+        <button class="toggle-btn" id="langToggle" title="Switch language">
+          <i class="fas fa-language"></i>
+          <span id="langLabel">EN</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- main layout (sidebar + content) -->
+    <div class="main-layout" id="mainLayout">
+      <!-- sidebar navigation (6 sections) -->
+      <aside class="sidebar" id="sidebar">
+        <button class="nav-item active" data-section="overview"><i class="fas fa-chart-pie"></i> <span>Dashboard Overview</span></button>
+        <button class="nav-item" data-section="receive"><i class="fas fa-box-open"></i> <span>Receive Materials</span></button>
+        <button class="nav-item" data-section="records"><i class="fas fa-clipboard-list"></i> <span>Material Records</span></button>
+        <button class="nav-item" data-section="requests"><i class="fas fa-user-clock"></i> <span>Seller Requests</span></button>
+        <button class="nav-item" data-section="stats"><i class="fas fa-chart-line"></i> <span>Statistics</span></button>
+        <button class="nav-item" data-section="profile"><i class="fas fa-id-card"></i> <span>Profile</span></button>
+      </aside>
+
+      <!-- main content area -->
+      <main class="content-panel" id="contentPanel">
+        <!-- 6 sections -->
+        <section id="overview" class="section active-section">
+          <h2 style="margin-bottom: 1.5rem;">Dashboard Overview</h2>
+          <div class="card-grid" id="overviewCards">
+            <!-- dynamic via js -->
+          </div>
+        </section>
+
+        <section id="receive" class="section">
+          <h2>Receive Materials</h2>
+          <div class="form-panel">
+            <form id="receiveForm">
+              <div class="form-group">
+                <label>Seller Name</label>
+                <input type="text" id="sellerName" required placeholder="e.g. Ahmed Hassan">
+              </div>
+              <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="phone" required placeholder="+20 123 456 789">
+              </div>
+              <div class="form-group">
+                <label>Material Type</label>
+                <select id="materialType" required>
+                  <option value="Aluminum">Aluminum</option>
+                  <option value="Plastic">Plastic</option>
+                  <option value="Glass">Glass</option>
+                  <option value="Paper">Paper</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Weight (grams) — 1g = 1 point</label>
+                <input type="number" id="weight" required min="1" step="1" placeholder="450">
+              </div>
+              <div class="form-group">
+                <label>Upload Image</label>
+                <input type="file" id="materialImage" accept="image/*" required>
+                <small style="color: var(--text-secondary);">Real image will be stored</small>
+              </div>
+              <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Record & add points</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="records" class="section">
+          <h2>Material Records</h2>
+          <div id="recordsList" class="records-grid"></div>
+        </section>
+
+        <section id="requests" class="section">
+          <h2>Seller Requests</h2>
+          <div class="card-grid">
+            <div class="stat-card">🚚 Awaiting pickup: 2 requests (demo)</div>
+            <div class="stat-card">⏳ Pending approval: 1 (Aluminum, 2kg)</div>
+          </div>
+        </section>
+
+        <section id="stats" class="section">
+          <h2>Detailed Statistics</h2>
+          <div class="card-grid" id="statsCards"></div>
+          <div style="margin-top: 2rem; background: var(--card-bg); border-radius: 32px; padding: 1.5rem;">
+            <h3>Material breakdown (last 2h trend)</h3>
+            <p id="breakdownText">Loading ...</p>
+          </div>
+        </section>
+
+        <section id="profile" class="section">
+          <h2>Outlet Profile</h2>
+          <div class="form-panel">
+            <p><strong>Outlet Name:</strong> North City Recycling</p>
+            <p><strong>Operator:</strong> Ali Samir</p>
+            <p><strong>Verified since:</strong> 2025</p>
+            <p><i class="fas fa-star" style="color: #0f5132;"></i> 128 total collections</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // ---------- DEXIE DATABASE ----------
+      const db = new Dexie('RecycleOutletDB');
+      db.version(1).stores({
+        records: '++id, sellerName, phone, materialType, weight, timestamp, points'
+      });
+      // open db
+      db.open().catch(e => console.error('DB error', e));
+
+      // ---------- GLOBAL VARIABLES ----------
+      let currentLang = 'en';        // 'en' or 'ar'
+      let currentTheme = 'light';    // 'light' or 'dark'
+
+      // DOM elements
+      const body = document.body;
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const langToggle = document.getElementById('langToggle');
+      const langLabel = document.getElementById('langLabel');
+      const navItems = document.querySelectorAll('.nav-item');
+      const sections = document.querySelectorAll('.section');
+      const receiveForm = document.getElementById('receiveForm');
+      const recordsDiv = document.getElementById('recordsList');
+      const overviewCards = document.getElementById('overviewCards');
+      const statsCards = document.getElementById('statsCards');
+      const breakdownText = document.getElementById('breakdownText');
+
+      // Helper to show active section
+      function showSection(sectionId) {
+        sections.forEach(sec => sec.classList.remove('active-section'));
+        document.getElementById(sectionId).classList.add('active-section');
+        navItems.forEach(item => {
+          const sec = item.dataset.section;
+          if (sec === sectionId) item.classList.add('active');
+          else item.classList.remove('active');
+        });
+        // refresh stats when showing stats/overview sections
+        if (sectionId === 'overview' || sectionId === 'stats') {
+          updateAllStats();
+        }
+        if (sectionId === 'records') renderRecords();
+      }
+
+      navItems.forEach(item => {
+        item.addEventListener('click', () => {
+          const section = item.dataset.section;
+          showSection(section);
+        });
+      });
+
+      // ---------- THEME TOGGLE ----------
+      themeToggle.addEventListener('click', () => {
+        body.classList.toggle('dark');
+        if (body.classList.contains('dark')) {
+          themeIcon.className = 'fas fa-moon';
+          currentTheme = 'dark';
+        } else {
+          themeIcon.className = 'fas fa-sun';
+          currentTheme = 'light';
+        }
+      });
+
+      // ---------- LANGUAGE TOGGLE (RTL/LTR) ----------
+      langToggle.addEventListener('click', () => {
+        if (body.dir === 'rtl') {
+          body.dir = 'ltr';
+          langLabel.innerText = 'EN';
+          currentLang = 'en';
+        } else {
+          body.dir = 'rtl';
+          langLabel.innerText = 'AR';
+          currentLang = 'ar';
+        }
+        // re-render any text if needed
+      });
+
+      // ---------- STORAGE: ADD RECORD ----------
+      receiveForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const sellerName = document.getElementById('sellerName').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const materialType = document.getElementById('materialType').value;
+        const weight = parseFloat(document.getElementById('weight').value);
+        const imageFile = document.getElementById('materialImage').files[0];
+        if (!imageFile) return alert('Please upload an image');
+
+        // convert image to blob for IndexedDB
+        const imageBlob = await imageFile.arrayBuffer().then(buf => new Blob([buf], { type: imageFile.type }));
+
+        const timestamp = new Date();
+        const points = weight; // 1g = 1 point
+
+        try {
+          await db.records.add({
+            sellerName,
+            phone,
+            materialType,
+            weight,
+            image: imageBlob,
+            timestamp,
+            points
+          });
+          // reset form
+          receiveForm.reset();
+          // update stats and records
+          updateAllStats();
+          renderRecords();
+          alert('Material recorded! Points added: ' + points);
+        } catch (err) {
+          console.error(err);
+          alert('Error saving record');
+        }
+      });
+
+      // ---------- RENDER RECORDS (with images) ----------
+      async function renderRecords() {
+        if (!recordsDiv) return;
+        const records = await db.records.orderBy('timestamp').reverse().toArray();
+        recordsDiv.innerHTML = '';
+        if (records.length === 0) {
+          recordsDiv.innerHTML = '<p class="stat-card">No records yet. Receive materials.</p>';
+          return;
+        }
+        records.forEach(rec => {
+          const card = document.createElement('div');
+          card.className = 'record-card';
+          // image from blob
+          let imgHtml = '';
+          if (rec.image) {
+            const url = URL.createObjectURL(rec.image);
+            imgHtml = `<img src="${url}" alt="material" onload="URL.revokeObjectURL('${url}')">`;
+          } else {
+            imgHtml = `<div style="height:160px; background:var(--bg-surface); border-radius:18px; display:flex; align-items:center; justify-content:center;">📷 No image</div>`;
+          }
+          card.innerHTML = `
+            ${imgHtml}
+            <p><strong>${rec.sellerName}</strong> (${rec.phone})</p>
+            <p>${rec.materialType} · ${rec.weight}g · 🟢 ${rec.points} pts</p>
+            <small>${new Date(rec.timestamp).toLocaleString()}</small>
+          `;
+          recordsDiv.appendChild(card);
+        });
+      }
+
+      // ---------- STATISTICS (total, points, today, % change last2h vs previous2h) ----------
+      async function computeStats() {
+        const all = await db.records.toArray();
+        const now = new Date();
+        const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+        const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
+
+        let totalWeight = 0, totalPoints = 0, todayWeight = 0;
+        let last2hWeight = 0, prev2hWeight = 0;
+
+        const startOfDay = new Date(now.setHours(0,0,0,0));
+
+        all.forEach(r => {
+          totalWeight += r.weight;
+          totalPoints += r.points;
+          const d = new Date(r.timestamp);
+          if (d >= startOfDay) todayWeight += r.weight;
+
+          if (d >= twoHoursAgo) last2hWeight += r.weight;
+          else if (d >= fourHoursAgo && d < twoHoursAgo) prev2hWeight += r.weight;
+        });
+
+        let percentChange = 0;
+        if (prev2hWeight > 0) {
+          percentChange = ((last2hWeight - prev2hWeight) / prev2hWeight) * 100;
+        } else if (last2hWeight > 0) percentChange = 100;
+
+        return { totalWeight, totalPoints, todayWeight, last2hWeight, prev2hWeight, percentChange };
+      }
+
+      async function updateAllStats() {
+        const stats = await computeStats();
+        // overview cards
+        overviewCards.innerHTML = `
+          <div class="stat-card"><div class="stat-title">Total materials</div><div class="stat-value">${stats.totalWeight} g</div></div>
+          <div class="stat-card"><div class="stat-title">Total points</div><div class="stat-value">${stats.totalPoints}</div></div>
+          <div class="stat-card"><div class="stat-title">Received today</div><div class="stat-value">${stats.todayWeight} g</div></div>
+          <div class="stat-card"><div class="stat-title">Change (last 2h)</div><div class="stat-value">${stats.percentChange.toFixed(1)}%</div><div class="stat-trend">vs previous 2h</div></div>
+        `;
+
+        // stats section cards
+        statsCards.innerHTML = `
+          <div class="stat-card"><span class="stat-title">Last 2h intake</span><div class="stat-value">${stats.last2hWeight} g</div></div>
+          <div class="stat-card"><span class="stat-title">Prev 2h intake</span><div class="stat-value">${stats.prev2hWeight} g</div></div>
+          <div class="stat-card"><span class="stat-title">Points today</span><div class="stat-value">${stats.totalPoints}</div></div>
+          <div class="stat-card"><span class="stat-title">Avg. per delivery</span><div class="stat-value">${(stats.totalWeight / (await db.records.count() || 1)).toFixed(1)} g</div></div>
+        `;
+
+        breakdownText.innerText = `Last 2 hours: ${stats.last2hWeight}g  |  Previous 2h: ${stats.prev2hWeight}g  |  Change: ${stats.percentChange.toFixed(1)}%`;
+      }
+
+      // initial load: show overview and populate
+      window.addEventListener('load', async () => {
+        // ensure default active section
+        showSection('overview');
+        await updateAllStats();
+        await renderRecords();
+
+        // dummy records for demonstration (if db empty)
+        const count = await db.records.count();
+        if (count === 0) {
+          // insert a sample record (with dummy image placeholder)
+          const dummyBlob = new Blob(['fake image content'], { type: 'text/plain' }); // just placeholder
+          await db.records.add({
+            sellerName: 'Samir Ali',
+            phone: '01001234567',
+            materialType: 'Plastic',
+            weight: 1200,
+            image: dummyBlob,
+            timestamp: new Date(Date.now() - 60*60*1000), // 1h ago
+            points: 1200
+          });
+          await db.records.add({
+            sellerName: 'Nadia Hassan',
+            phone: '01122334455',
+            materialType: 'Aluminum',
+            weight: 3400,
+            image: dummyBlob,
+            timestamp: new Date(Date.now() - 3*60*60*1000), // 3h ago
+            points: 3400
+          });
+          await updateAllStats();
+          await renderRecords();
+        }
+      });
+
+      // image preview auto-clean
+      window.renderRecords = renderRecords; // for onload attr
+    })();
+  </script>
+  <!-- tiny extra style for rtl fine-tuning -->
+  <style>
+    body[dir="rtl"] .nav-item { text-align: right; }
+    body[dir="rtl"] .nav-item i { margin-left: 0.5rem; margin-right: 0; }
+    body[dir="rtl"] .header-controls { margin-right: auto; }
+    body[dir="rtl"] .sidebar { border-left: 1px solid var(--border-light); border-right: none; }
+  </style>
+</body>
+</html>
