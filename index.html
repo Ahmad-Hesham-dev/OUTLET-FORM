@@ -475,6 +475,116 @@
       // open db
       db.open().catch(e => console.error('DB error', e));
 
+      // ---------- TRANSLATIONS ----------
+      const translations = {
+        en: {
+          // Header
+          lightDark: "Light / Dark",
+          // Navigation
+          navOverview: "Dashboard Overview",
+          navReceive: "Receive Materials",
+          navRecords: "Material Records",
+          navRequests: "Seller Requests",
+          navStats: "Statistics",
+          navProfile: "Profile",
+          // Sections
+          overviewTitle: "Dashboard Overview",
+          receiveTitle: "Receive Materials",
+          recordsTitle: "Material Records",
+          requestsTitle: "Seller Requests",
+          statsTitle: "Detailed Statistics",
+          profileTitle: "Outlet Profile",
+          // Receive form
+          sellerName: "Seller Name",
+          phoneNumber: "Phone Number",
+          materialType: "Material Type",
+          weightLabel: "Weight (grams) — 1g = 1 point",
+          uploadImage: "Upload Image",
+          imageHint: "Real image will be stored",
+          submitBtn: "Record & add points",
+          // Placeholders
+          sellerPlaceholder: "e.g. Ahmed Hassan",
+          phonePlaceholder: "+20 123 456 789",
+          weightPlaceholder: "450",
+          // Requests demo
+          request1: "🚚 Awaiting pickup: 2 requests (demo)",
+          request2: "⏳ Pending approval: 1 (Aluminum, 2kg)",
+          // Profile
+          outletName: "Outlet Name:",
+          outletValue: "North City Recycling",
+          operator: "Operator:",
+          operatorValue: "Ali Samir",
+          verified: "Verified since:",
+          verifiedValue: "2025",
+          collections: "total collections",
+          // Stats breakdown
+          breakdown: "Material breakdown (last 2h trend)",
+          // Record card
+          noImage: "📷 No image",
+          points: "pts",
+          // Empty records
+          noRecords: "No records yet. Receive materials.",
+          // Material options
+          aluminum: "Aluminum",
+          plastic: "Plastic",
+          glass: "Glass",
+          paper: "Paper"
+        },
+        ar: {
+          // Header
+          lightDark: "خفيف / داكن",
+          // Navigation
+          navOverview: "نظرة عامة",
+          navReceive: "استلام المواد",
+          navRecords: "سجل المواد",
+          navRequests: "طلبات البائعين",
+          navStats: "الإحصائيات",
+          navProfile: "الملف الشخصي",
+          // Sections
+          overviewTitle: "نظرة عامة",
+          receiveTitle: "استلام المواد",
+          recordsTitle: "سجل المواد",
+          requestsTitle: "طلبات البائعين",
+          statsTitle: "إحصائيات مفصلة",
+          profileTitle: "الملف الشخصي",
+          // Receive form
+          sellerName: "اسم البائع",
+          phoneNumber: "رقم الهاتف",
+          materialType: "نوع المادة",
+          weightLabel: "الوزن (جرام) — 1 جرام = 1 نقطة",
+          uploadImage: "رفع صورة",
+          imageHint: "سيتم تخزين الصورة الفعلية",
+          submitBtn: "تسجيل وإضافة نقاط",
+          // Placeholders
+          sellerPlaceholder: "مثال: أحمد حسن",
+          phonePlaceholder: "٢٠١٢٣٤٥٦٧٨٩+",
+          weightPlaceholder: "٤٥٠",
+          // Requests demo
+          request1: "🚚 في انتظار الاستلام: طلبين (تجريبي)",
+          request2: "⏳ بانتظار الموافقة: ١ (ألمنيوم، ٢كجم)",
+          // Profile
+          outletName: "اسم المنفذ:",
+          outletValue: "تدوير المدينة الشمالية",
+          operator: "المشغل:",
+          operatorValue: "علي سمير",
+          verified: "موثق منذ:",
+          verifiedValue: "٢٠٢٥",
+          collections: "مجموع التحصيلات",
+          // Stats breakdown
+          breakdown: "تفصيل المواد (اتجاه آخر ساعتين)",
+          // Record card
+          noImage: "📷 لا توجد صورة",
+          points: "نقطة",
+          // Empty records
+          noRecords: "لا توجد سجلات بعد. استلم مواد أولاً.",
+          // Material options
+          aluminum: "ألمنيوم",
+          plastic: "بلاستيك",
+          glass: "زجاج",
+          paper: "ورق"
+        }
+      };
+
       // ---------- GLOBAL VARIABLES ----------
       let currentLang = 'en';        // 'en' or 'ar'
       let currentTheme = 'light';    // 'light' or 'dark'
@@ -528,18 +638,86 @@
         }
       });
 
-      // ---------- LANGUAGE TOGGLE (RTL/LTR) ----------
+      // ---------- LANGUAGE TOGGLE (RTL/LTR + translations) ----------
+      function applyLanguage(lang) {
+        const t = translations[lang];
+        
+        // Update navigation items
+        navItems[0].querySelector('span').textContent = t.navOverview;
+        navItems[1].querySelector('span').textContent = t.navReceive;
+        navItems[2].querySelector('span').textContent = t.navRecords;
+        navItems[3].querySelector('span').textContent = t.navRequests;
+        navItems[4].querySelector('span').textContent = t.navStats;
+        navItems[5].querySelector('span').textContent = t.navProfile;
+        
+        // Update section titles
+        document.querySelector('#overview h2').textContent = t.overviewTitle;
+        document.querySelector('#receive h2').textContent = t.receiveTitle;
+        document.querySelector('#records h2').textContent = t.recordsTitle;
+        document.querySelector('#requests h2').textContent = t.requestsTitle;
+        document.querySelector('#stats h2').textContent = t.statsTitle;
+        document.querySelector('#profile h2').textContent = t.profileTitle;
+        
+        // Update receive form
+        const receiveLabels = document.querySelectorAll('#receive .form-group label');
+        receiveLabels[0].textContent = t.sellerName;
+        receiveLabels[1].textContent = t.phoneNumber;
+        receiveLabels[2].textContent = t.materialType;
+        receiveLabels[3].textContent = t.weightLabel;
+        receiveLabels[4].textContent = t.uploadImage;
+        
+        document.getElementById('sellerName').placeholder = t.sellerPlaceholder;
+        document.getElementById('phone').placeholder = t.phonePlaceholder;
+        document.getElementById('weight').placeholder = t.weightPlaceholder;
+        
+        const materialSelect = document.getElementById('materialType');
+        materialSelect.options[0].text = t.aluminum;
+        materialSelect.options[1].text = t.plastic;
+        materialSelect.options[2].text = t.glass;
+        materialSelect.options[3].text = t.paper;
+        
+        document.querySelector('#receive small').textContent = t.imageHint;
+        document.querySelector('#receive .btn-primary').innerHTML = `<i class="fas fa-save"></i> ${t.submitBtn}`;
+        
+        // Update requests demo cards
+        const requestCards = document.querySelectorAll('#requests .stat-card');
+        if (requestCards.length >= 2) {
+          requestCards[0].textContent = t.request1;
+          requestCards[1].textContent = t.request2;
+        }
+        
+        // Update profile
+        const profilePs = document.querySelectorAll('#profile .form-panel p');
+        if (profilePs.length >= 4) {
+          profilePs[0].innerHTML = `<strong>${t.outletName}</strong> ${t.outletValue}`;
+          profilePs[1].innerHTML = `<strong>${t.operator}</strong> ${t.operatorValue}`;
+          profilePs[2].innerHTML = `<strong>${t.verified}</strong> ${t.verifiedValue}`;
+          profilePs[3].innerHTML = `<i class="fas fa-star" style="color: #0f5132;"></i> 128 ${t.collections}`;
+        }
+        
+        // Update stats breakdown title
+        document.querySelector('#stats div h3').textContent = t.breakdown;
+        
+        // Update theme toggle text
+        themeToggle.querySelector('span').textContent = t.lightDark;
+        
+        // Re-render dynamic content
+        updateAllStats();
+        renderRecords();
+      }
+
       langToggle.addEventListener('click', () => {
         if (body.dir === 'rtl') {
           body.dir = 'ltr';
           langLabel.innerText = 'EN';
           currentLang = 'en';
+          applyLanguage('en');
         } else {
           body.dir = 'rtl';
           langLabel.innerText = 'AR';
           currentLang = 'ar';
+          applyLanguage('ar');
         }
-        // re-render any text if needed
       });
 
       // ---------- STORAGE: ADD RECORD ----------
@@ -584,9 +762,10 @@
       async function renderRecords() {
         if (!recordsDiv) return;
         const records = await db.records.orderBy('timestamp').reverse().toArray();
+        const t = translations[currentLang];
         recordsDiv.innerHTML = '';
         if (records.length === 0) {
-          recordsDiv.innerHTML = '<p class="stat-card">No records yet. Receive materials.</p>';
+          recordsDiv.innerHTML = `<p class="stat-card">${t.noRecords}</p>`;
           return;
         }
         records.forEach(rec => {
@@ -598,13 +777,13 @@
             const url = URL.createObjectURL(rec.image);
             imgHtml = `<img src="${url}" alt="material" onload="URL.revokeObjectURL('${url}')">`;
           } else {
-            imgHtml = `<div style="height:160px; background:var(--bg-surface); border-radius:18px; display:flex; align-items:center; justify-content:center;">📷 No image</div>`;
+            imgHtml = `<div style="height:160px; background:var(--bg-surface); border-radius:18px; display:flex; align-items:center; justify-content:center;">${t.noImage}</div>`;
           }
           card.innerHTML = `
             ${imgHtml}
             <p><strong>${rec.sellerName}</strong> (${rec.phone})</p>
-            <p>${rec.materialType} · ${rec.weight}g · 🟢 ${rec.points} pts</p>
-            <small>${new Date(rec.timestamp).toLocaleString()}</small>
+            <p>${rec.materialType} · ${rec.weight}g · 🟢 ${rec.points} ${t.points}</p>
+            <small>${new Date(rec.timestamp).toLocaleString(currentLang === 'ar' ? 'ar-EG' : 'en-US')}</small>
           `;
           recordsDiv.appendChild(card);
         });
@@ -642,23 +821,25 @@
 
       async function updateAllStats() {
         const stats = await computeStats();
+        const t = translations[currentLang];
+        
         // overview cards
         overviewCards.innerHTML = `
-          <div class="stat-card"><div class="stat-title">Total materials</div><div class="stat-value">${stats.totalWeight} g</div></div>
-          <div class="stat-card"><div class="stat-title">Total points</div><div class="stat-value">${stats.totalPoints}</div></div>
-          <div class="stat-card"><div class="stat-title">Received today</div><div class="stat-value">${stats.todayWeight} g</div></div>
-          <div class="stat-card"><div class="stat-title">Change (last 2h)</div><div class="stat-value">${stats.percentChange.toFixed(1)}%</div><div class="stat-trend">vs previous 2h</div></div>
+          <div class="stat-card"><div class="stat-title">${currentLang === 'en' ? 'Total materials' : 'إجمالي المواد'}</div><div class="stat-value">${stats.totalWeight} g</div></div>
+          <div class="stat-card"><div class="stat-title">${currentLang === 'en' ? 'Total points' : 'إجمالي النقاط'}</div><div class="stat-value">${stats.totalPoints}</div></div>
+          <div class="stat-card"><div class="stat-title">${currentLang === 'en' ? 'Received today' : 'المستلم اليوم'}</div><div class="stat-value">${stats.todayWeight} g</div></div>
+          <div class="stat-card"><div class="stat-title">${currentLang === 'en' ? 'Change (last 2h)' : 'التغيير (آخر ساعتين)'}</div><div class="stat-value">${stats.percentChange.toFixed(1)}%</div><div class="stat-trend">${currentLang === 'en' ? 'vs previous 2h' : 'مقارنة بالساعتين السابقتين'}</div></div>
         `;
 
         // stats section cards
         statsCards.innerHTML = `
-          <div class="stat-card"><span class="stat-title">Last 2h intake</span><div class="stat-value">${stats.last2hWeight} g</div></div>
-          <div class="stat-card"><span class="stat-title">Prev 2h intake</span><div class="stat-value">${stats.prev2hWeight} g</div></div>
-          <div class="stat-card"><span class="stat-title">Points today</span><div class="stat-value">${stats.totalPoints}</div></div>
-          <div class="stat-card"><span class="stat-title">Avg. per delivery</span><div class="stat-value">${(stats.totalWeight / (await db.records.count() || 1)).toFixed(1)} g</div></div>
+          <div class="stat-card"><span class="stat-title">${currentLang === 'en' ? 'Last 2h intake' : 'آخر ساعتين'}</span><div class="stat-value">${stats.last2hWeight} g</div></div>
+          <div class="stat-card"><span class="stat-title">${currentLang === 'en' ? 'Prev 2h intake' : 'الساعتين السابقتين'}</span><div class="stat-value">${stats.prev2hWeight} g</div></div>
+          <div class="stat-card"><span class="stat-title">${currentLang === 'en' ? 'Points today' : 'نقاط اليوم'}</span><div class="stat-value">${stats.totalPoints}</div></div>
+          <div class="stat-card"><span class="stat-title">${currentLang === 'en' ? 'Avg. per delivery' : 'المتوسط لكل تسليم'}</span><div class="stat-value">${(stats.totalWeight / (await db.records.count() || 1)).toFixed(1)} g</div></div>
         `;
 
-        breakdownText.innerText = `Last 2 hours: ${stats.last2hWeight}g  |  Previous 2h: ${stats.prev2hWeight}g  |  Change: ${stats.percentChange.toFixed(1)}%`;
+        breakdownText.innerText = `${currentLang === 'en' ? 'Last 2 hours' : 'آخر ساعتين'}: ${stats.last2hWeight}g  |  ${currentLang === 'en' ? 'Previous 2h' : 'الساعتين السابقتين'}: ${stats.prev2hWeight}g  |  ${currentLang === 'en' ? 'Change' : 'التغيير'}: ${stats.percentChange.toFixed(1)}%`;
       }
 
       // initial load: show overview and populate
