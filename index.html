@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-  <title>Outlet Role · ReCircle</title>
-  <!-- Font Awesome 6 (free icons) -->
+  <title>Outlet · ReCircle</title>
+  <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- Dexie.js (IndexedDB wrapper) -->
+  <!-- Dexie.js -->
   <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
   <style>
+    /* ========== STYLES (completely unchanged from original, plus minimal delete button) ========== */
     * {
       margin: 0;
       padding: 0;
@@ -17,7 +18,6 @@
       transition: background-color 0.25s ease, color 0.2s ease, border-color 0.2s, box-shadow 0.2s;
     }
 
-    /* Light theme (default) – white bg, dark green text */
     body {
       --bg-primary: #ffffff;
       --bg-surface: #f8faf8;
@@ -30,20 +30,24 @@
       --nav-hover: #e7f3ec;
       --accent-green: #0f5132;
       --icon-filter: none;
+      --delete-bg: rgba(220, 38, 38, 0.1);
+      --delete-color: #b91c1c;
     }
 
     body.dark {
-      --bg-primary: #123123;        /* dark green base */
-      --bg-surface: #1d2c26;         /* slightly lighter green for surfaces */
+      --bg-primary: #123123;
+      --bg-surface: #1d2c26;
       --text-primary: #ffffff;
       --text-secondary: #e0f0e5;
       --border-light: #132b1f;
-      --card-bg: #013616;             /* deep green card */
+      --card-bg: #013616;
       --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
       --hover-glow: 0 4px 16px rgba(46, 46, 46, 0.2);
       --nav-hover: #002412;
       --accent-green: #ffffff;
       --icon-filter: brightness(0) invert(1);
+      --delete-bg: rgba(220, 38, 38, 0.3);
+      --delete-color: #fca5a5;
     }
 
     body {
@@ -55,14 +59,12 @@
       line-height: 1.5;
     }
 
-    /* main dashboard wrapper */
     .dashboard {
       display: flex;
       flex-direction: column;
       height: 100vh;
     }
 
-    /* ---------- HEADER ---------- */
     .header {
       background-color: var(--bg-surface);
       padding: 0.8rem 1.8rem;
@@ -86,7 +88,6 @@
       align-items: center;
     }
 
-    /* toggle buttons */
     .toggle-btn {
       background: transparent;
       border: 1px solid var(--border-light);
@@ -113,20 +114,17 @@
       transform: scale(1.02);
     }
 
-    /* ----- MAIN LAYOUT (sidebar + content) with RTL support ----- */
     .main-layout {
       display: flex;
       flex: 1;
       overflow: hidden;
-      flex-direction: row; /* default LTR */
+      flex-direction: row;
     }
 
-    /* RTL override: swap sidebar and main visually */
     body[dir="rtl"] .main-layout {
       flex-direction: row-reverse;
     }
 
-    /* SIDEBAR */
     .sidebar {
       width: 260px;
       background-color: var(--bg-surface);
@@ -182,7 +180,6 @@
       color: var(--bg-primary);
     }
 
-    /* MAIN CONTENT PANEL */
     .content-panel {
       flex: 1;
       padding: 1.8rem 2rem;
@@ -191,7 +188,6 @@
       scroll-behavior: smooth;
     }
 
-    /* sections - only active shown */
     .section {
       display: none;
       animation: fadeIn 0.3s ease;
@@ -206,7 +202,6 @@
       100% { opacity: 1; transform: translateY(0); }
     }
 
-    /* cards */
     .card-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -245,7 +240,6 @@
       gap: 0.2rem;
     }
 
-    /* forms */
     .form-panel {
       background-color: var(--card-bg);
       border-radius: 32px;
@@ -296,7 +290,6 @@
       transform: scale(1.02);
     }
 
-    /* records list */
     .records-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -309,6 +302,7 @@
       padding: 1rem;
       box-shadow: var(--shadow);
       border: 1px solid var(--border-light);
+      position: relative; /* for delete button positioning */
     }
     .record-card img {
       width: 100%;
@@ -322,7 +316,35 @@
       margin: 0.2rem 0;
     }
 
-    /* responsive */
+    /* Delete button style (minimal addition) */
+    .delete-record-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--delete-bg);
+      color: var(--delete-color);
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      backdrop-filter: blur(2px);
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .delete-record-btn:hover {
+      transform: scale(1.1);
+      background: rgba(220, 38, 38, 0.3);
+    }
+    body[dir="rtl"] .delete-record-btn {
+      right: auto;
+      left: 12px;
+    }
+
     @media (max-width: 700px) {
       .sidebar {
         width: 80px;
@@ -354,112 +376,105 @@
 </head>
 <body>
   <div class="dashboard">
-    <!-- header with toggles -->
     <header class="header">
       <div class="logo">
-        <h2> Outlet · ReCircle</h2>
-      </div>
-      <div class="header-controls">
-        <!-- dark/light toggle -->
-        <button class="toggle-btn" id="themeToggle" title="Toggle dark mode">
-          <i id="themeIcon" class="fas fa-sun"></i>
-          <span>Light / Dark</span>
-        </button>
-        <!-- arabic/english toggle -->
-        <button class="toggle-btn" id="langToggle" title="Switch language">
-          <i class="fas fa-language"></i>
-          <span id="langLabel">EN</span>
-        </button>
+        <h2 data-i18n="appTitle">Outlet · ReCircle</h2>
       </div>
     </header>
 
-    <!-- main layout (sidebar + content) -->
     <div class="main-layout" id="mainLayout">
-      <!-- sidebar navigation (6 sections) -->
       <aside class="sidebar" id="sidebar">
-        <button class="nav-item active" data-section="overview"><i class="fas fa-chart-pie"></i> <span>Dashboard Overview</span></button>
-        <button class="nav-item" data-section="receive"><i class="fas fa-box-open"></i> <span>Receive Materials</span></button>
-        <button class="nav-item" data-section="records"><i class="fas fa-clipboard-list"></i> <span>Material Records</span></button>
-        <button class="nav-item" data-section="requests"><i class="fas fa-user-clock"></i> <span>Seller Requests</span></button>
-        <button class="nav-item" data-section="stats"><i class="fas fa-chart-line"></i> <span>Statistics</span></button>
-        <button class="nav-item" data-section="profile"><i class="fas fa-id-card"></i> <span>Profile</span></button>
+        <button class="nav-item active" data-section="overview"><i class="fas fa-chart-pie"></i> <span data-i18n="navOverview">Dashboard Overview</span></button>
+        <button class="nav-item" data-section="receive"><i class="fas fa-box-open"></i> <span data-i18n="navReceive">Receive Materials</span></button>
+        <button class="nav-item" data-section="records"><i class="fas fa-clipboard-list"></i> <span data-i18n="navRecords">Material Records</span></button>
+        <button class="nav-item" data-section="requests"><i class="fas fa-user-clock"></i> <span data-i18n="navRequests">Seller Requests</span></button>
+        <button class="nav-item" data-section="stats"><i class="fas fa-chart-line"></i> <span data-i18n="navStats">Statistics</span></button>
+        <button class="nav-item" data-section="profile"><i class="fas fa-id-card"></i> <span data-i18n="navProfile">Profile</span></button>
+        <button class="nav-item" data-section="settings"><i class="fas fa-cog"></i> <span data-i18n="navSettings">Settings</span></button>
       </aside>
 
-      <!-- main content area -->
       <main class="content-panel" id="contentPanel">
-        <!-- 6 sections -->
         <section id="overview" class="section active-section">
-          <h2 style="margin-bottom: 1.5rem;">Dashboard Overview</h2>
-          <div class="card-grid" id="overviewCards">
-            <!-- dynamic via js -->
-          </div>
+          <h2 data-i18n="overviewTitle" style="margin-bottom: 1.5rem;">Dashboard Overview</h2>
+          <div class="card-grid" id="overviewCards"></div>
         </section>
 
         <section id="receive" class="section">
-          <h2>Receive Materials</h2>
+          <h2 data-i18n="receiveTitle">Receive Materials</h2>
           <div class="form-panel">
             <form id="receiveForm">
               <div class="form-group">
-                <label>Seller Name</label>
-                <input type="text" id="sellerName" required placeholder="e.g. Ahmed Hassan">
+                <label data-i18n="sellerNameLabel">Seller Name</label>
+                <input type="text" id="sellerName" required placeholder="e.g. Ahmed Hassan" data-i18n-placeholder="sellerNamePlaceholder">
               </div>
               <div class="form-group">
-                <label>Phone Number</label>
-                <input type="tel" id="phone" required placeholder="+20 123 456 789">
+                <label data-i18n="phoneLabel">Phone Number</label>
+                <input type="tel" id="phone" required placeholder="+20 123 456 789" data-i18n-placeholder="phonePlaceholder">
               </div>
               <div class="form-group">
-                <label>Material Type</label>
+                <label data-i18n="materialTypeLabel">Material Type</label>
                 <select id="materialType" required>
-                  <option value="Aluminum">Aluminum</option>
-                  <option value="Plastic">Plastic</option>
-                  <option value="Glass">Glass</option>
-                  <option value="Paper">Paper</option>
+                  <option value="Aluminum" data-i18n="aluminum">Aluminum</option>
+                  <option value="Plastic" data-i18n="plastic">Plastic</option>
+                  <option value="Glass" data-i18n="glass">Glass</option>
+                  <option value="Paper" data-i18n="paper">Paper</option>
                 </select>
               </div>
               <div class="form-group">
-                <label>Weight (grams) — 1g = 1 point</label>
-                <input type="number" id="weight" required min="1" step="1" placeholder="450">
+                <label data-i18n="weightLabel">Weight (grams) — 1g = 1 point</label>
+                <input type="number" id="weight" required min="1" step="1" placeholder="450" data-i18n-placeholder="weightPlaceholder">
               </div>
               <div class="form-group">
-                <label>Upload Image</label>
+                <label data-i18n="imageLabel">Upload Image</label>
                 <input type="file" id="materialImage" accept="image/*" required>
-                <small style="color: var(--text-secondary);">Real image will be stored</small>
+                <small style="color: var(--text-secondary);" data-i18n="imageHint">Real image will be stored</small>
               </div>
-              <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Record & add points</button>
+              <button type="submit" class="btn-primary"><i class="fas fa-save"></i> <span data-i18n="recordButton">Record & add points</span></button>
             </form>
           </div>
         </section>
 
         <section id="records" class="section">
-          <h2>Material Records</h2>
+          <h2 data-i18n="recordsTitle">Material Records</h2>
           <div id="recordsList" class="records-grid"></div>
         </section>
 
         <section id="requests" class="section">
-          <h2>Seller Requests</h2>
-          <div class="card-grid">
-            <div class="stat-card">🚚 Awaiting pickup: 2 requests (demo)</div>
-            <div class="stat-card">⏳ Pending approval: 1 (Aluminum, 2kg)</div>
-          </div>
+          <h2 data-i18n="requestsTitle">Seller Requests</h2>
+          <div class="card-grid" id="sellerRequestsGrid"></div>
         </section>
 
         <section id="stats" class="section">
-          <h2>Detailed Statistics</h2>
+          <h2 data-i18n="statsTitle">Detailed Statistics</h2>
           <div class="card-grid" id="statsCards"></div>
           <div style="margin-top: 2rem; background: var(--card-bg); border-radius: 32px; padding: 1.5rem;">
-            <h3>Material breakdown (last 2h trend)</h3>
+            <h3 data-i18n="breakdownTitle">Material breakdown (last 2h trend)</h3>
             <p id="breakdownText">Loading ...</p>
           </div>
         </section>
 
         <section id="profile" class="section">
-          <h2>Outlet Profile</h2>
+          <h2 data-i18n="profileTitle">Outlet Profile</h2>
           <div class="form-panel">
-            <p><strong>Outlet Name:</strong> North City Recycling</p>
-            <p><strong>Operator:</strong> Ali Samir</p>
-            <p><strong>Verified since:</strong> 2025</p>
-            <p><i class="fas fa-star" style="color: #0f5132;"></i> 128 total collections</p>
+            <p><strong data-i18n="profileUsernameLabel">Username:</strong> <span id="profile-username"></span></p>
+            <p><strong data-i18n="profilePhoneLabel">Phone:</strong> <span id="profile-phone"></span></p>
+            <p><strong data-i18n="profileRoleLabel">Role:</strong> <span id="profile-role"></span></p>
           </div>
+        </section>
+
+        <section id="settings" class="section">
+          <h2 data-i18n="settingsTitle">Settings</h2>
+          <div class="header-controls">
+            <button class="toggle-btn" id="themeToggle" title="Toggle dark mode">
+              <i id="themeIcon" class="fas fa-sun"></i>
+              <span data-i18n="themeToggle">Light / Dark</span>
+            </button>
+            <button class="toggle-btn" id="langToggle" title="Switch language">
+              <i class="fas fa-language"></i>
+              <span id="langLabel">EN</span>
+            </button>
+          </div>
+          <p style="margin-top: 1.5rem; color: var(--text-secondary);" data-i18n="settingsHint">Appearance and language preferences</p>
         </section>
       </main>
     </div>
@@ -472,122 +487,116 @@
       db.version(1).stores({
         records: '++id, sellerName, phone, materialType, weight, timestamp, points'
       });
-      // open db
       db.open().catch(e => console.error('DB error', e));
 
       // ---------- TRANSLATIONS ----------
       const translations = {
         en: {
-          // Header
-          lightDark: "Light / Dark",
-          // Navigation
-          navOverview: "Dashboard Overview",
-          navReceive: "Receive Materials",
-          navRecords: "Material Records",
-          navRequests: "Seller Requests",
-          navStats: "Statistics",
-          navProfile: "Profile",
-          // Sections
-          overviewTitle: "Dashboard Overview",
-          receiveTitle: "Receive Materials",
-          recordsTitle: "Material Records",
-          requestsTitle: "Seller Requests",
-          statsTitle: "Detailed Statistics",
-          profileTitle: "Outlet Profile",
-          // Receive form
-          sellerName: "Seller Name",
-          phoneNumber: "Phone Number",
-          materialType: "Material Type",
-          weightLabel: "Weight (grams) — 1g = 1 point",
-          uploadImage: "Upload Image",
-          imageHint: "Real image will be stored",
-          submitBtn: "Record & add points",
-          // Placeholders
-          sellerPlaceholder: "e.g. Ahmed Hassan",
-          phonePlaceholder: "+20 123 456 789",
-          weightPlaceholder: "450",
-          // Requests demo
-          request1: "🚚 Awaiting pickup: 2 requests (demo)",
-          request2: "⏳ Pending approval: 1 (Aluminum, 2kg)",
-          // Profile
-          outletName: "Outlet Name:",
-          outletValue: "North City Recycling",
-          operator: "Operator:",
-          operatorValue: "Ali Samir",
-          verified: "Verified since:",
-          verifiedValue: "2025",
-          collections: "total collections",
-          // Stats breakdown
-          breakdown: "Material breakdown (last 2h trend)",
-          // Record card
-          noImage: "📷 No image",
-          points: "pts",
-          // Empty records
-          noRecords: "No records yet. Receive materials.",
-          // Material options
-          aluminum: "Aluminum",
-          plastic: "Plastic",
-          glass: "Glass",
-          paper: "Paper"
+          appTitle: 'Outlet · ReCircle',
+          navOverview: 'Dashboard Overview',
+          navReceive: 'Receive Materials',
+          navRecords: 'Material Records',
+          navRequests: 'Seller Requests',
+          navStats: 'Statistics',
+          navProfile: 'Profile',
+          navSettings: 'Settings',
+          overviewTitle: 'Dashboard Overview',
+          receiveTitle: 'Receive Materials',
+          sellerNameLabel: 'Seller Name',
+          sellerNamePlaceholder: 'e.g. Ahmed Hassan',
+          phoneLabel: 'Phone Number',
+          phonePlaceholder: '+20 123 456 789',
+          materialTypeLabel: 'Material Type',
+          aluminum: 'Aluminum',
+          plastic: 'Plastic',
+          glass: 'Glass',
+          paper: 'Paper',
+          weightLabel: 'Weight (grams) — 1g = 1 point',
+          weightPlaceholder: '450',
+          imageLabel: 'Upload Image',
+          imageHint: 'Real image will be stored',
+          recordButton: 'Record & add points',
+          recordsTitle: 'Material Records',
+          requestsTitle: 'Seller Requests',
+          statsTitle: 'Detailed Statistics',
+          breakdownTitle: 'Material breakdown (last 2h trend)',
+          profileTitle: 'Outlet Profile',
+          profileUsernameLabel: 'Username:',
+          profilePhoneLabel: 'Phone:',
+          profileRoleLabel: 'Role:',
+          settingsTitle: 'Settings',
+          themeToggle: 'Light / Dark',
+          settingsHint: 'Appearance and language preferences',
+          totalMaterials: 'Total materials',
+          totalPoints: 'Total points',
+          receivedToday: 'Received today',
+          changeLast2h: 'Change (last 2h)',
+          vsPrev2h: 'vs previous 2h',
+          last2hIntake: 'Last 2h intake',
+          prev2hIntake: 'Prev 2h intake',
+          pointsToday: 'Points today',
+          avgPerDelivery: 'Avg. per delivery',
+          loading: 'Loading ...',
+          noRecords: 'No materials recorded yet.',
+          noImage: 'No image',
+          noSellerSubmissions: 'No seller submissions yet.',
+          confirmDelete: 'Are you sure you want to delete this record?'
         },
         ar: {
-          // Header
-          lightDark: "خفيف / داكن",
-          // Navigation
-          navOverview: "نظرة عامة",
-          navReceive: "استلام المواد",
-          navRecords: "سجل المواد",
-          navRequests: "طلبات البائعين",
-          navStats: "الإحصائيات",
-          navProfile: "الملف الشخصي",
-          // Sections
-          overviewTitle: "نظرة عامة",
-          receiveTitle: "استلام المواد",
-          recordsTitle: "سجل المواد",
-          requestsTitle: "طلبات البائعين",
-          statsTitle: "إحصائيات مفصلة",
-          profileTitle: "الملف الشخصي",
-          // Receive form
-          sellerName: "اسم البائع",
-          phoneNumber: "رقم الهاتف",
-          materialType: "نوع المادة",
-          weightLabel: "الوزن (جرام) — 1 جرام = 1 نقطة",
-          uploadImage: "رفع صورة",
-          imageHint: "سيتم تخزين الصورة الفعلية",
-          submitBtn: "تسجيل وإضافة نقاط",
-          // Placeholders
-          sellerPlaceholder: "مثال: أحمد حسن",
-          phonePlaceholder: "٢٠١٢٣٤٥٦٧٨٩+",
-          weightPlaceholder: "٤٥٠",
-          // Requests demo
-          request1: "🚚 في انتظار الاستلام: طلبين (تجريبي)",
-          request2: "⏳ بانتظار الموافقة: ١ (ألمنيوم، ٢كجم)",
-          // Profile
-          outletName: "اسم المنفذ:",
-          outletValue: "تدوير المدينة الشمالية",
-          operator: "المشغل:",
-          operatorValue: "علي سمير",
-          verified: "موثق منذ:",
-          verifiedValue: "٢٠٢٥",
-          collections: "مجموع التحصيلات",
-          // Stats breakdown
-          breakdown: "تفصيل المواد (اتجاه آخر ساعتين)",
-          // Record card
-          noImage: "📷 لا توجد صورة",
-          points: "نقطة",
-          // Empty records
-          noRecords: "لا توجد سجلات بعد. استلم مواد أولاً.",
-          // Material options
-          aluminum: "ألمنيوم",
-          plastic: "بلاستيك",
-          glass: "زجاج",
-          paper: "ورق"
+          appTitle: 'المتجر · إعادة التدوير',
+          navOverview: 'نظرة عامة',
+          navReceive: 'استلام المواد',
+          navRecords: 'سجل المواد',
+          navRequests: 'طلبات البائعين',
+          navStats: 'الإحصائيات',
+          navProfile: 'الملف الشخصي',
+          navSettings: 'الإعدادات',
+          overviewTitle: 'نظرة عامة',
+          receiveTitle: 'استلام المواد',
+          sellerNameLabel: 'اسم البائع',
+          sellerNamePlaceholder: 'مثال: أحمد حسن',
+          phoneLabel: 'رقم الهاتف',
+          phonePlaceholder: '+20 123 456 789',
+          materialTypeLabel: 'نوع المادة',
+          aluminum: 'ألومنيوم',
+          plastic: 'بلاستيك',
+          glass: 'زجاج',
+          paper: 'ورق',
+          weightLabel: 'الوزن (جرام) — 1 جرام = 1 نقطة',
+          weightPlaceholder: '٤٥٠',
+          imageLabel: 'رفع صورة',
+          imageHint: 'سيتم تخزين الصورة الفعلية',
+          recordButton: 'تسجيل وإضافة نقاط',
+          recordsTitle: 'سجل المواد',
+          requestsTitle: 'طلبات البائعين',
+          statsTitle: 'إحصائيات مفصلة',
+          breakdownTitle: 'تحليل المواد (آخر ساعتين)',
+          profileTitle: 'الملف الشخصي للمتجر',
+          profileUsernameLabel: 'اسم المستخدم:',
+          profilePhoneLabel: 'رقم الهاتف:',
+          profileRoleLabel: 'الدور:',
+          settingsTitle: 'الإعدادات',
+          themeToggle: 'فاتح / داكن',
+          settingsHint: 'المظهر وتفضيلات اللغة',
+          totalMaterials: 'إجمالي المواد',
+          totalPoints: 'إجمالي النقاط',
+          receivedToday: 'المستلم اليوم',
+          changeLast2h: 'التغيير (آخر ساعتين)',
+          vsPrev2h: 'مقارنة بالساعتين السابقتين',
+          last2hIntake: 'آخر ساعتين',
+          prev2hIntake: 'الساعتين السابقتين',
+          pointsToday: 'نقاط اليوم',
+          avgPerDelivery: 'المتوسط لكل تسليم',
+          loading: 'جار التحميل ...',
+          noRecords: 'لم يتم تسجيل أي مواد بعد.',
+          noImage: 'لا توجد صورة',
+          noSellerSubmissions: 'لا توجد طلبات بائعين بعد.',
+          confirmDelete: 'هل أنت متأكد من حذف هذا السجل؟'
         }
       };
 
-      // ---------- GLOBAL VARIABLES ----------
-      let currentLang = 'en';        // 'en' or 'ar'
-      let currentTheme = 'light';    // 'light' or 'dark'
+      let currentLang = 'en';
+      let currentTheme = 'light';
 
       // DOM elements
       const body = document.body;
@@ -602,125 +611,77 @@
       const overviewCards = document.getElementById('overviewCards');
       const statsCards = document.getElementById('statsCards');
       const breakdownText = document.getElementById('breakdownText');
+      const profileUsername = document.getElementById('profile-username');
+      const profilePhone = document.getElementById('profile-phone');
+      const profileRole = document.getElementById('profile-role');
+      const sellerRequestsGrid = document.getElementById('sellerRequestsGrid');
 
-      // Helper to show active section
-      function showSection(sectionId) {
-        sections.forEach(sec => sec.classList.remove('active-section'));
-        document.getElementById(sectionId).classList.add('active-section');
-        navItems.forEach(item => {
-          const sec = item.dataset.section;
-          if (sec === sectionId) item.classList.add('active');
-          else item.classList.remove('active');
-        });
-        // refresh stats when showing stats/overview sections
-        if (sectionId === 'overview' || sectionId === 'stats') {
-          updateAllStats();
-        }
-        if (sectionId === 'records') renderRecords();
+      // ---------- HELPER: get seller materials from localStorage ----------
+      function getSellerMaterials() {
+        const data = localStorage.getItem('sellerMaterials');
+        return data ? JSON.parse(data) : [];
       }
 
-      navItems.forEach(item => {
-        item.addEventListener('click', () => {
-          const section = item.dataset.section;
-          showSection(section);
+      // ---------- TRANSLATION FUNCTION ----------
+      function applyTranslation(lang) {
+        const t = translations[lang];
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (t[key]) {
+            if (el.tagName === 'OPTION') {
+              el.textContent = t[key];
+            } else {
+              el.textContent = t[key];
+            }
+          }
         });
-      });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+          const key = el.getAttribute('data-i18n-placeholder');
+          if (t[key]) {
+            el.placeholder = t[key];
+          }
+        });
+        // Refresh UI with new language
+        updateAllStats();
+        renderRecords();
+        renderSellerRequests();
+      }
+
+      function __(key) {
+        return translations[currentLang][key] || key;
+      }
 
       // ---------- THEME TOGGLE ----------
       themeToggle.addEventListener('click', () => {
         body.classList.toggle('dark');
-        if (body.classList.contains('dark')) {
-          themeIcon.className = 'fas fa-moon';
-          currentTheme = 'dark';
-        } else {
-          themeIcon.className = 'fas fa-sun';
-          currentTheme = 'light';
-        }
+        themeIcon.className = body.classList.contains('dark') ? 'fas fa-moon' : 'fas fa-sun';
       });
 
-      // ---------- LANGUAGE TOGGLE (RTL/LTR + translations) ----------
-      function applyLanguage(lang) {
-        const t = translations[lang];
-        
-        // Update navigation items
-        navItems[0].querySelector('span').textContent = t.navOverview;
-        navItems[1].querySelector('span').textContent = t.navReceive;
-        navItems[2].querySelector('span').textContent = t.navRecords;
-        navItems[3].querySelector('span').textContent = t.navRequests;
-        navItems[4].querySelector('span').textContent = t.navStats;
-        navItems[5].querySelector('span').textContent = t.navProfile;
-        
-        // Update section titles
-        document.querySelector('#overview h2').textContent = t.overviewTitle;
-        document.querySelector('#receive h2').textContent = t.receiveTitle;
-        document.querySelector('#records h2').textContent = t.recordsTitle;
-        document.querySelector('#requests h2').textContent = t.requestsTitle;
-        document.querySelector('#stats h2').textContent = t.statsTitle;
-        document.querySelector('#profile h2').textContent = t.profileTitle;
-        
-        // Update receive form
-        const receiveLabels = document.querySelectorAll('#receive .form-group label');
-        receiveLabels[0].textContent = t.sellerName;
-        receiveLabels[1].textContent = t.phoneNumber;
-        receiveLabels[2].textContent = t.materialType;
-        receiveLabels[3].textContent = t.weightLabel;
-        receiveLabels[4].textContent = t.uploadImage;
-        
-        document.getElementById('sellerName').placeholder = t.sellerPlaceholder;
-        document.getElementById('phone').placeholder = t.phonePlaceholder;
-        document.getElementById('weight').placeholder = t.weightPlaceholder;
-        
-        const materialSelect = document.getElementById('materialType');
-        materialSelect.options[0].text = t.aluminum;
-        materialSelect.options[1].text = t.plastic;
-        materialSelect.options[2].text = t.glass;
-        materialSelect.options[3].text = t.paper;
-        
-        document.querySelector('#receive small').textContent = t.imageHint;
-        document.querySelector('#receive .btn-primary').innerHTML = `<i class="fas fa-save"></i> ${t.submitBtn}`;
-        
-        // Update requests demo cards
-        const requestCards = document.querySelectorAll('#requests .stat-card');
-        if (requestCards.length >= 2) {
-          requestCards[0].textContent = t.request1;
-          requestCards[1].textContent = t.request2;
-        }
-        
-        // Update profile
-        const profilePs = document.querySelectorAll('#profile .form-panel p');
-        if (profilePs.length >= 4) {
-          profilePs[0].innerHTML = `<strong>${t.outletName}</strong> ${t.outletValue}`;
-          profilePs[1].innerHTML = `<strong>${t.operator}</strong> ${t.operatorValue}`;
-          profilePs[2].innerHTML = `<strong>${t.verified}</strong> ${t.verifiedValue}`;
-          profilePs[3].innerHTML = `<i class="fas fa-star" style="color: #0f5132;"></i> 128 ${t.collections}`;
-        }
-        
-        // Update stats breakdown title
-        document.querySelector('#stats div h3').textContent = t.breakdown;
-        
-        // Update theme toggle text
-        themeToggle.querySelector('span').textContent = t.lightDark;
-        
-        // Re-render dynamic content
-        updateAllStats();
-        renderRecords();
-      }
-
+      // ---------- LANGUAGE TOGGLE ----------
       langToggle.addEventListener('click', () => {
         if (body.dir === 'rtl') {
           body.dir = 'ltr';
           langLabel.innerText = 'EN';
           currentLang = 'en';
-          applyLanguage('en');
         } else {
           body.dir = 'rtl';
           langLabel.innerText = 'AR';
           currentLang = 'ar';
-          applyLanguage('ar');
         }
+        applyTranslation(currentLang);
       });
 
-      // ---------- STORAGE: ADD RECORD ----------
+      // ---------- PROFILE: load from localStorage ----------
+      function loadProfileFromStorage() {
+        const userName = localStorage.getItem('userName') || '—';
+        const userPhone = localStorage.getItem('userPhone') || '—';
+        const userRole = localStorage.getItem('userRole') || '—';
+        if (profileUsername) profileUsername.textContent = userName;
+        if (profilePhone) profilePhone.textContent = userPhone;
+        if (profileRole) profileRole.textContent = userRole;
+      }
+
+      // ---------- RECEIVE FORM: add record to Dexie ----------
       receiveForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const sellerName = document.getElementById('sellerName').value.trim();
@@ -728,13 +689,12 @@
         const materialType = document.getElementById('materialType').value;
         const weight = parseFloat(document.getElementById('weight').value);
         const imageFile = document.getElementById('materialImage').files[0];
-        if (!imageFile) return alert('Please upload an image');
+        if (!imageFile) return alert( __('imageHint') );
 
-        // convert image to blob for IndexedDB
         const imageBlob = await imageFile.arrayBuffer().then(buf => new Blob([buf], { type: imageFile.type }));
 
         const timestamp = new Date();
-        const points = weight; // 1g = 1 point
+        const points = weight;
 
         try {
           await db.records.add({
@@ -746,69 +706,114 @@
             timestamp,
             points
           });
-          // reset form
           receiveForm.reset();
-          // update stats and records
-          updateAllStats();
+          // Update overview & stats immediately
+          await updateAllStats();
           renderRecords();
-          alert('Material recorded! Points added: ' + points);
+          alert( __('recordButton') + ' ' + points);
         } catch (err) {
           console.error(err);
           alert('Error saving record');
         }
       });
 
-      // ---------- RENDER RECORDS (with images) ----------
+      // ---------- DELETE RECORD FUNCTION ----------
+      async function deleteRecord(id) {
+        if (!confirm( __('confirmDelete') )) return;
+        try {
+          await db.records.delete(id);
+          // Refresh stats and records
+          await updateAllStats();
+          renderRecords();
+        } catch (err) {
+          console.error('Delete failed', err);
+          alert('Could not delete record');
+        }
+      }
+
+      // ---------- RENDER OUTLET RECORDS (from Dexie) with delete button ----------
       async function renderRecords() {
         if (!recordsDiv) return;
         const records = await db.records.orderBy('timestamp').reverse().toArray();
-        const t = translations[currentLang];
         recordsDiv.innerHTML = '';
         if (records.length === 0) {
-          recordsDiv.innerHTML = `<p class="stat-card">${t.noRecords}</p>`;
+          recordsDiv.innerHTML = `<p class="stat-card">${__('noRecords')}</p>`;
           return;
         }
         records.forEach(rec => {
           const card = document.createElement('div');
           card.className = 'record-card';
-          // image from blob
           let imgHtml = '';
           if (rec.image) {
             const url = URL.createObjectURL(rec.image);
             imgHtml = `<img src="${url}" alt="material" onload="URL.revokeObjectURL('${url}')">`;
           } else {
-            imgHtml = `<div style="height:160px; background:var(--bg-surface); border-radius:18px; display:flex; align-items:center; justify-content:center;">${t.noImage}</div>`;
+            imgHtml = `<div style="height:160px; background:var(--bg-surface); border-radius:18px; display:flex; align-items:center; justify-content:center;">📷 ${__('noImage')}</div>`;
           }
           card.innerHTML = `
             ${imgHtml}
             <p><strong>${rec.sellerName}</strong> (${rec.phone})</p>
-            <p>${rec.materialType} · ${rec.weight}g · 🟢 ${rec.points} ${t.points}</p>
-            <small>${new Date(rec.timestamp).toLocaleString(currentLang === 'ar' ? 'ar-EG' : 'en-US')}</small>
+            <p>${rec.materialType} · ${rec.weight}g · 🟢 ${rec.points} pts</p>
+            <small>${new Date(rec.timestamp).toLocaleString()}</small>
+            <button class="delete-record-btn" data-id="${rec.id}"><i class="fas fa-trash"></i></button>
           `;
+          // Attach delete event
+          const deleteBtn = card.querySelector('.delete-record-btn');
+          deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteRecord(rec.id);
+          });
           recordsDiv.appendChild(card);
         });
       }
 
-      // ---------- STATISTICS (total, points, today, % change last2h vs previous2h) ----------
-      async function computeStats() {
-        const all = await db.records.toArray();
+      // ---------- COMBINED STATISTICS (sellerMaterials + Dexie records) ----------
+      async function computeCombinedStats() {
+        const sellerMaterials = getSellerMaterials();
+        const dexieRecords = await db.records.toArray();
+
         const now = new Date();
         const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
         const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
-
-        let totalWeight = 0, totalPoints = 0, todayWeight = 0;
-        let last2hWeight = 0, prev2hWeight = 0;
-
         const startOfDay = new Date(now.setHours(0,0,0,0));
 
-        all.forEach(r => {
-          totalWeight += r.weight;
-          totalPoints += r.points;
-          const d = new Date(r.timestamp);
-          if (d >= startOfDay) todayWeight += r.weight;
+        let totalWeight = 0, totalPoints = 0, todayWeight = 0, todayPoints = 0;
+        let last2hWeight = 0, prev2hWeight = 0;
+        let submissionCount = 0;
 
-          if (d >= twoHoursAgo) last2hWeight += r.weight;
-          else if (d >= fourHoursAgo && d < twoHoursAgo) prev2hWeight += r.weight;
+        // Process sellerMaterials (from localStorage)
+        sellerMaterials.forEach(r => {
+          const weight = r.weight || 0;
+          const points = r.points || 0;
+          totalWeight += weight;
+          totalPoints += points;
+          submissionCount++;
+
+          const dateStr = r.date || r.timestamp;
+          const d = dateStr ? new Date(dateStr) : null;
+          if (d && d >= startOfDay) {
+            todayWeight += weight;
+            todayPoints += points;
+          }
+          if (d && d >= twoHoursAgo) last2hWeight += weight;
+          else if (d && d >= fourHoursAgo && d < twoHoursAgo) prev2hWeight += weight;
+        });
+
+        // Process Dexie records (outlet's own receipts)
+        dexieRecords.forEach(r => {
+          const weight = r.weight || 0;
+          const points = r.points || 0;
+          totalWeight += weight;
+          totalPoints += points;
+          submissionCount++;
+
+          const d = r.timestamp ? new Date(r.timestamp) : null;
+          if (d && d >= startOfDay) {
+            todayWeight += weight;
+            todayPoints += points;
+          }
+          if (d && d >= twoHoursAgo) last2hWeight += weight;
+          else if (d && d >= fourHoursAgo && d < twoHoursAgo) prev2hWeight += weight;
         });
 
         let percentChange = 0;
@@ -816,72 +821,99 @@
           percentChange = ((last2hWeight - prev2hWeight) / prev2hWeight) * 100;
         } else if (last2hWeight > 0) percentChange = 100;
 
-        return { totalWeight, totalPoints, todayWeight, last2hWeight, prev2hWeight, percentChange };
+        return { totalWeight, totalPoints, todayWeight, todayPoints, last2hWeight, prev2hWeight, percentChange, submissionCount };
       }
 
+      // ---------- UPDATE OVERVIEW & STATS SECTIONS (using combined data) ----------
       async function updateAllStats() {
-        const stats = await computeStats();
-        const t = translations[currentLang];
-        
-        // overview cards
+        const stats = await computeCombinedStats();
+        // Overview cards
         overviewCards.innerHTML = `
-          <div class="stat-card"><div class="stat-title">${currentLang === 'en' ? 'Total materials' : 'إجمالي المواد'}</div><div class="stat-value">${stats.totalWeight} g</div></div>
-          <div class="stat-card"><div class="stat-title">${currentLang === 'en' ? 'Total points' : 'إجمالي النقاط'}</div><div class="stat-value">${stats.totalPoints}</div></div>
-          <div class="stat-card"><div class="stat-title">${currentLang === 'en' ? 'Received today' : 'المستلم اليوم'}</div><div class="stat-value">${stats.todayWeight} g</div></div>
-          <div class="stat-card"><div class="stat-title">${currentLang === 'en' ? 'Change (last 2h)' : 'التغيير (آخر ساعتين)'}</div><div class="stat-value">${stats.percentChange.toFixed(1)}%</div><div class="stat-trend">${currentLang === 'en' ? 'vs previous 2h' : 'مقارنة بالساعتين السابقتين'}</div></div>
+          <div class="stat-card"><div class="stat-title">${__('totalMaterials')}</div><div class="stat-value">${stats.totalWeight} g</div></div>
+          <div class="stat-card"><div class="stat-title">${__('totalPoints')}</div><div class="stat-value">${stats.totalPoints}</div></div>
+          <div class="stat-card"><div class="stat-title">${__('receivedToday')}</div><div class="stat-value">${stats.todayWeight} g</div></div>
+          <div class="stat-card"><div class="stat-title">${__('changeLast2h')}</div><div class="stat-value">${stats.percentChange.toFixed(1)}%</div><div class="stat-trend">${__('vsPrev2h')}</div></div>
         `;
 
-        // stats section cards
+        // Statistics cards
         statsCards.innerHTML = `
-          <div class="stat-card"><span class="stat-title">${currentLang === 'en' ? 'Last 2h intake' : 'آخر ساعتين'}</span><div class="stat-value">${stats.last2hWeight} g</div></div>
-          <div class="stat-card"><span class="stat-title">${currentLang === 'en' ? 'Prev 2h intake' : 'الساعتين السابقتين'}</span><div class="stat-value">${stats.prev2hWeight} g</div></div>
-          <div class="stat-card"><span class="stat-title">${currentLang === 'en' ? 'Points today' : 'نقاط اليوم'}</span><div class="stat-value">${stats.totalPoints}</div></div>
-          <div class="stat-card"><span class="stat-title">${currentLang === 'en' ? 'Avg. per delivery' : 'المتوسط لكل تسليم'}</span><div class="stat-value">${(stats.totalWeight / (await db.records.count() || 1)).toFixed(1)} g</div></div>
+          <div class="stat-card"><span class="stat-title">${__('last2hIntake')}</span><div class="stat-value">${stats.last2hWeight} g</div></div>
+          <div class="stat-card"><span class="stat-title">${__('prev2hIntake')}</span><div class="stat-value">${stats.prev2hWeight} g</div></div>
+          <div class="stat-card"><span class="stat-title">${__('pointsToday')}</span><div class="stat-value">${stats.todayPoints}</div></div>
+          <div class="stat-card"><span class="stat-title">${__('avgPerDelivery')}</span><div class="stat-value">${stats.submissionCount ? (stats.totalWeight / stats.submissionCount).toFixed(1) : 0} g</div></div>
         `;
 
-        breakdownText.innerText = `${currentLang === 'en' ? 'Last 2 hours' : 'آخر ساعتين'}: ${stats.last2hWeight}g  |  ${currentLang === 'en' ? 'Previous 2h' : 'الساعتين السابقتين'}: ${stats.prev2hWeight}g  |  ${currentLang === 'en' ? 'Change' : 'التغيير'}: ${stats.percentChange.toFixed(1)}%`;
+        breakdownText.innerText = `${__('last2hIntake')}: ${stats.last2hWeight}g  |  ${__('prev2hIntake')}: ${stats.prev2hWeight}g  |  ${__('changeLast2h')}: ${stats.percentChange.toFixed(1)}%`;
       }
 
-      // initial load: show overview and populate
-      window.addEventListener('load', async () => {
-        // ensure default active section
-        showSection('overview');
-        await updateAllStats();
-        await renderRecords();
+      // ---------- RENDER SELLER REQUESTS (from localStorage only) ----------
+      function renderSellerRequests() {
+        if (!sellerRequestsGrid) return;
+        const materials = getSellerMaterials();
+        sellerRequestsGrid.innerHTML = '';
+        if (materials.length === 0) {
+          sellerRequestsGrid.innerHTML = `<div class="stat-card">${__('noSellerSubmissions')}</div>`;
+          return;
+        }
+        materials.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'record-card';
+          const sellerName = item.sellerName || item.name || item.userName || 'Unknown Seller';
+          const materialName = item.materialName || item.material || 'Unknown';
+          const weight = item.weight || 0;
+          const points = item.points || 0;
+          const dateStr = item.date || item.timestamp;
+          const formattedDate = dateStr ? new Date(dateStr).toLocaleString() : '';
+          card.innerHTML = `
+            <p><strong>${sellerName}</strong></p>
+            <p>${materialName} · ${weight}g · 🟢 ${points} pts</p>
+            <small>${formattedDate}</small>
+          `;
+          sellerRequestsGrid.appendChild(card);
+        });
+      }
 
-        // dummy records for demonstration (if db empty)
-        const count = await db.records.count();
-        if (count === 0) {
-          // insert a sample record (with dummy image placeholder)
-          const dummyBlob = new Blob(['fake image content'], { type: 'text/plain' }); // just placeholder
-          await db.records.add({
-            sellerName: 'Samir Ali',
-            phone: '01001234567',
-            materialType: 'Plastic',
-            weight: 1200,
-            image: dummyBlob,
-            timestamp: new Date(Date.now() - 60*60*1000), // 1h ago
-            points: 1200
-          });
-          await db.records.add({
-            sellerName: 'Nadia Hassan',
-            phone: '01122334455',
-            materialType: 'Aluminum',
-            weight: 3400,
-            image: dummyBlob,
-            timestamp: new Date(Date.now() - 3*60*60*1000), // 3h ago
-            points: 3400
-          });
+      // ---------- SECTION NAVIGATION ----------
+      async function showSection(sectionId) {
+        sections.forEach(sec => sec.classList.remove('active-section'));
+        document.getElementById(sectionId).classList.add('active-section');
+        navItems.forEach(item => {
+          item.classList.toggle('active', item.dataset.section === sectionId);
+        });
+
+        if (sectionId === 'overview' || sectionId === 'stats') {
           await updateAllStats();
+        }
+        if (sectionId === 'records') {
           await renderRecords();
         }
+        if (sectionId === 'requests') {
+          renderSellerRequests();
+        }
+      }
+
+      navItems.forEach(item => {
+        item.addEventListener('click', () => showSection(item.dataset.section));
       });
 
-      // image preview auto-clean
-      window.renderRecords = renderRecords; // for onload attr
+      // ---------- INITIAL LOAD ----------
+      window.addEventListener('load', async () => {
+        body.dir = 'ltr';
+        currentLang = 'en';
+        langLabel.innerText = 'EN';
+        applyTranslation('en');
+
+        loadProfileFromStorage();
+
+        await showSection('overview');
+        await renderRecords();
+        renderSellerRequests();
+      });
+
+      // Expose for debugging if needed
+      window.deleteRecord = deleteRecord;
     })();
   </script>
-  <!-- tiny extra style for rtl fine-tuning -->
   <style>
     body[dir="rtl"] .nav-item { text-align: right; }
     body[dir="rtl"] .nav-item i { margin-left: 0.5rem; margin-right: 0; }
