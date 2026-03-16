@@ -9,7 +9,7 @@
   <!-- Dexie.js -->
   <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
   <style>
-    /* ========== STYLES (completely unchanged from original, plus minimal delete button) ========== */
+    /* (existing styles – unchanged) */
     * {
       margin: 0;
       padding: 0;
@@ -302,7 +302,7 @@
       padding: 1rem;
       box-shadow: var(--shadow);
       border: 1px solid var(--border-light);
-      position: relative; /* for delete button positioning */
+      position: relative;
     }
     .record-card img {
       width: 100%;
@@ -316,7 +316,6 @@
       margin: 0.2rem 0;
     }
 
-    /* Delete button style (minimal addition) */
     .delete-record-btn {
       position: absolute;
       top: 12px;
@@ -482,10 +481,14 @@
 
   <script>
     (function() {
-      // ---------- DEXIE DATABASE ----------
+      // ----- Added for userId integration -----
+      const currentUserId = localStorage.getItem('currentUserId');   // read logged-in user ID
+
+      // ---------- DEXIE DATABASE (updated schema with userId index) ----------
       const db = new Dexie('RecycleOutletDB');
-      db.version(1).stores({
-        records: '++id, sellerName, phone, materialType, weight, timestamp, points'
+      // MODIFIED: version 2 with userId index
+      db.version(2).stores({
+        records: '++id, sellerName, phone, materialType, weight, timestamp, points, userId'
       });
       db.open().catch(e => console.error('DB error', e));
 
@@ -616,10 +619,13 @@
       const profileRole = document.getElementById('profile-role');
       const sellerRequestsGrid = document.getElementById('sellerRequestsGrid');
 
-      // ---------- HELPER: get seller materials from localStorage ----------
+      // ---------- HELPER: get seller materials from localStorage (filtered by userId) ----------
       function getSellerMaterials() {
         const data = localStorage.getItem('sellerMaterials');
-        return data ? JSON.parse(data) : [];
+        const all = data ? JSON.parse(data) : [];
+        // MODIFIED: filter by currentUserId
+        if (!currentUserId) return [];
+        return all.filter(item => item.userId === currentUserId);
       }
 
       // ---------- TRANSLATION FUNCTION ----------
@@ -681,7 +687,7 @@
         if (profileRole) profileRole.textContent = userRole;
       }
 
-      // ---------- RECEIVE FORM: add record to Dexie ----------
+      // ---------- RECEIVE FORM: add record to Dexie (userId already attached) ----------
       receiveForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const sellerName = document.getElementById('sellerName').value.trim();
@@ -704,10 +710,11 @@
             weight,
             image: imageBlob,
             timestamp,
-            points
+            points,
+            // ----- Added for userId integration -----
+            userId: currentUserId || null
           });
           receiveForm.reset();
-          // Update overview & stats immediately
           await updateAllStats();
           renderRecords();
           alert( __('recordButton') + ' ' + points);
@@ -722,7 +729,6 @@
         if (!confirm( __('confirmDelete') )) return;
         try {
           await db.records.delete(id);
-          // Refresh stats and records
           await updateAllStats();
           renderRecords();
         } catch (err) {
@@ -731,10 +737,19 @@
         }
       }
 
-      // ---------- RENDER OUTLET RECORDS (from Dexie) with delete button ----------
+      // ---------- RENDER OUTLET RECORDS (filtered by userId) ----------
       async function renderRecords() {
         if (!recordsDiv) return;
-        const records = await db.records.orderBy('timestamp').reverse().toArray();
+        // MODIFIED: filter by userId
+        let records = [];
+        if (currentUserId) {
+          records = await db.records.where('userId').equals(currentUserId).toArray();
+        } else {
+          records = [];
+        }
+        // sort by timestamp descending
+        records.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
         recordsDiv.innerHTML = '';
         if (records.length === 0) {
           recordsDiv.innerHTML = `<p class="stat-card">${__('noRecords')}</p>`;
@@ -757,7 +772,6 @@
             <small>${new Date(rec.timestamp).toLocaleString()}</small>
             <button class="delete-record-btn" data-id="${rec.id}"><i class="fas fa-trash"></i></button>
           `;
-          // Attach delete event
           const deleteBtn = card.querySelector('.delete-record-btn');
           deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -767,10 +781,14 @@
         });
       }
 
-      // ---------- COMBINED STATISTICS (sellerMaterials + Dexie records) ----------
+      // ---------- COMBINED STATISTICS (sellerMaterials + Dexie records, both filtered) ----------
       async function computeCombinedStats() {
-        const sellerMaterials = getSellerMaterials();
-        const dexieRecords = await db.records.toArray();
+        const sellerMaterials = getSellerMaterials(); // already filtered
+        // MODIFIED: filter Dexie records by userId
+        let dexieRecords = [];
+        if (currentUserId) {
+          dexieRecords = await db.records.where('userId').equals(currentUserId).toArray();
+        }
 
         const now = new Date();
         const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
@@ -781,7 +799,7 @@
         let last2hWeight = 0, prev2hWeight = 0;
         let submissionCount = 0;
 
-        // Process sellerMaterials (from localStorage)
+        // Process sellerMaterials
         sellerMaterials.forEach(r => {
           const weight = r.weight || 0;
           const points = r.points || 0;
@@ -799,7 +817,7 @@
           else if (d && d >= fourHoursAgo && d < twoHoursAgo) prev2hWeight += weight;
         });
 
-        // Process Dexie records (outlet's own receipts)
+        // Process Dexie records
         dexieRecords.forEach(r => {
           const weight = r.weight || 0;
           const points = r.points || 0;
@@ -846,10 +864,10 @@
         breakdownText.innerText = `${__('last2hIntake')}: ${stats.last2hWeight}g  |  ${__('prev2hIntake')}: ${stats.prev2hWeight}g  |  ${__('changeLast2h')}: ${stats.percentChange.toFixed(1)}%`;
       }
 
-      // ---------- RENDER SELLER REQUESTS (from localStorage only) ----------
+      // ---------- RENDER SELLER REQUESTS (from filtered sellerMaterials) ----------
       function renderSellerRequests() {
         if (!sellerRequestsGrid) return;
-        const materials = getSellerMaterials();
+        const materials = getSellerMaterials(); // already filtered
         sellerRequestsGrid.innerHTML = '';
         if (materials.length === 0) {
           sellerRequestsGrid.innerHTML = `<div class="stat-card">${__('noSellerSubmissions')}</div>`;
@@ -910,7 +928,6 @@
         renderSellerRequests();
       });
 
-      // Expose for debugging if needed
       window.deleteRecord = deleteRecord;
     })();
   </script>
@@ -922,4 +939,3 @@
   </style>
 </body>
 </html>
-
